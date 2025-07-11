@@ -30,16 +30,39 @@ print = functools.partial(print, flush=True)
 
 from XMem.model.network import XMem
 
+import ollama
+from ollama import Client
+
+#from google import genai
+
+commands = [
+    "Pick up the marker.",
+    "Use the pen to pull the mug", 
+    "Pick up the mug"
+]
+
 if __name__ == "__main__":
 
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    client = openai.OpenAI()
+    #openai.api_key = os.getenv("OPENAI_API_KEY")
+    #client = openai.OpenAI()
+
+    client = Client(host="http://127.0.0.1:11434")
+
+    #client = genai.GenerativeModel('gemini-2.5-flash')
+
+    #client = genai.Client(api_key='AIzaSyBe4K_63juiK-CDYeKx1UYGtGNb_iTlGoM')
+
 
     # Parse args
     parser = argparse.ArgumentParser(description="Main Program.")
-    parser.add_argument("-lm", "--language_model", choices=["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"], default="gpt-4o", help="select language model")
-    parser.add_argument("-r", "--robot", choices=["sawyer", "franka"], default="sawyer", help="select robot")
-    parser.add_argument("-m", "--mode", choices=["default", "debug"], default="default", help="select mode to run")
+
+    #parser.add_argument("-lm", "--language_model", choices=["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"], default="gpt-4o-mini", help="select language model")
+    parser.add_argument("-lm", "--language_model", choices=["llama3", "llama3.1", "llama3.2", "llama3.3:70b-instruct-q3_K_S", "qwen3:32b"], default="llama3.1", help="select language model")
+    #parser.add_argument( "-lm", "--language_model", choices=["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"], default="gemini-2.0-flash", help="Sélectionnez le modèle de langage Gemini." )
+
+
+    parser.add_argument("-r", "--robot", choices=["sawyer", "franka"], default="franka", help="select robot")
+    parser.add_argument("-m", "--mode", choices=["default", "debug"], default="debug", help="select mode to run")
     args = parser.parse_args()
 
     # Logging
@@ -69,6 +92,8 @@ if __name__ == "__main__":
     open_gripper = api.open_gripper
     close_gripper = api.close_gripper
     task_completed = api.task_completed
+    get_grasping_position = api.get_grasping_position
+    generate_linear_trajectory = api.generate_linear_trajectory
 
     # Start process
     env_process = Process(target=run_simulation_environment, name="EnvProcess", args=[args, env_connection, logger])
@@ -78,7 +103,7 @@ if __name__ == "__main__":
     logger.info(env_connection_message)
 
     # User input
-    command = input("Enter a command: ")
+    command = commands.pop(0)
     api.command = command
 
     # Main task execution loop
@@ -163,16 +188,17 @@ if __name__ == "__main__":
                     api.failed_task = False
 
                 else:
-
+                    # error = False
+                    # print("Helllllllllllllllllooooooooooooooooooooooooooooooooooooooooooooooooooooo")
                     logger.info(PROGRESS + "Generating ChatGPT output..." + ENDC)
                     messages = models.get_chatgpt_output(client, args.language_model, new_prompt, messages, "user")
-                    logger.info(OK + "Finished generating ChatGPT output!" + ENDC)
+                    logger.info(OK + "Finished generating ChatGPT output!---blocked code" + ENDC)
 
                     error = False
 
         logger.info(OK + "FINISHED TASK!" + ENDC)
 
-        new_prompt = input("Enter a command: ")
+        new_prompt = commands.pop(0)
 
         logger.info(PROGRESS + "Generating ChatGPT output..." + ENDC)
         messages = models.get_chatgpt_output(client, args.language_model, new_prompt, messages, "user")

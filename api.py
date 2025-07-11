@@ -59,8 +59,10 @@ class API:
 
         self.logger.info(PROGRESS + "Segmenting head camera image..." + ENDC)
         model_predictions, boxes, segmentation_texts = models.get_langsam_output(rgb_image_head, self.langsam_model, segmentation_texts, self.segmentation_count)
+        self.logger.info(PROGRESS + f"Model Pred...{model_predictions[0]}" + ENDC)
         self.logger.info(OK + "Finished segmenting head camera image!" + ENDC)
-
+        # model_predictions = [model_predictions[0]]
+        # segmentation_texts = [segmentation_texts[0]]
         masks = utils.get_segmentation_mask(model_predictions, config.segmentation_threshold)
 
         bounding_cubes_world_coordinates, bounding_cubes_orientations = utils.get_bounding_cube_from_point_cloud(rgb_image_head, masks, depth_array, self.head_camera_position, self.head_camera_orientation_q, self.segmentation_count)
@@ -120,7 +122,6 @@ class API:
 
 
     def close_gripper(self):
-
         self.logger.info(PROGRESS + "Closing gripper..." + ENDC)
         self.main_connection.send([CLOSE_GRIPPER])
 
@@ -133,7 +134,7 @@ class API:
             self.completed_task = True
 
         else:
-
+            self.completed_task = True
             self.logger.info(PROGRESS + "Waiting to execute all generated trajectories..." + ENDC)
             self.main_connection.send([TASK_COMPLETED])
             [env_connection_message] = self.main_connection.recv()
@@ -218,7 +219,7 @@ class API:
             code_block = messages[-1]["content"].split("```python")
 
             task_completed = self.task_completed
-            task_failed = self.task_failed
+            # task_failed = self.task_failed
 
             for block in code_block:
                 if len(block.split("```")) > 1:
@@ -226,17 +227,51 @@ class API:
                     exec(code)
 
 
+    def get_grasping_position(self, position,dimention) -> list:
+        self.logger.info(OK + f"Old Grasping!{position}" + ENDC)
+        self.logger.info(OK + f"Old Grasping!{dimention}" + ENDC)
+        reduce = (max(dimention)/3)
+        self.logger.info(OK + f"Reduction!{reduce}" + ENDC)
+        new_pos = position[1]-reduce
+        position[1] =new_pos
+        self.logger.info(OK + f"New Grasping!{position}" + ENDC)
+        return position
+    
+    def generate_linear_trajectory(self,start_pose, end_pose, num_points=100):
+        """
+        Generate a linear trajectory from start_pose to end_pose with specified number of points.
+        
+        Parameters:
+        - start_pose: list of [x, y, z, rotation]
+        - end_pose: list of [x, y, z, rotation]
+        - num_points: number of trajectory points (default = 100)
+        
+        Returns:
+        - trajectory: list of [x, y, z, rotation] poses
+        """
+        trajectory = []
+        self.logger.info(OK + f"NUMBER_OF_POINTS{num_points}" + ENDC)
+        for i in range(num_points):
+            t = i / (num_points - 1)
+            interp_pose = [
+                start_pose[0] + t * (end_pose[0] - start_pose[0]),
+                start_pose[1] + t * (end_pose[1] - start_pose[1]),
+                start_pose[2] + t * (end_pose[2] - start_pose[2]),
+                start_pose[3] + t * (end_pose[3] - start_pose[3])
+            ]
+            trajectory.append(interp_pose)
+        return trajectory
 
-    def task_failed(self):
+    # def task_failed(self):
 
-        self.failed_task = True
+    #     self.failed_task = True
 
-        self.logger.info(PROGRESS + "Resetting environment..." + ENDC)
-        self.main_connection.send([RESET_ENVIRONMENT])
-        [env_connection_message] = self.main_connection.recv()
-        self.logger.info(env_connection_message)
+    #     self.logger.info(PROGRESS + "Resetting environment..." + ENDC)
+    #     self.main_connection.send([RESET_ENVIRONMENT])
+    #     [env_connection_message] = self.main_connection.recv()
+    #     self.logger.info(env_connection_message)
 
-        self.segmentation_count = 0
-        self.trajectory_length = 0
-        self.segmentation_texts = []
-        self.attempted_task = False
+    #     self.segmentation_count = 0
+    #     self.trajectory_length = 0
+    #     self.segmentation_texts = []
+    #     self.attempted_task = False
