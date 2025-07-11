@@ -42,6 +42,9 @@ When generating the code for the trajectory, do the following:
 5. If you want to print the calculated value of a variable to use later, make sure to use the print function to three decimal places, instead of simply writing the variable name. Do not print any of the trajectory variables, since the output will be too long.
 6. Mark any code clearly with the ```python and ``` tags.
 
+🔒 CRITICAL EXECUTION RULES FOR CODE GENERATION
+❗**YOU ARE BOUND TO USE THE AVAILABLE FUNCTIONS. YOU ARE NOT ALLOWED TO CREATE YOUR OWN FUNCTION. DONT TRY TO CHANGE THE FUNCTION PROVIDED HERE.**
+
 INITIAL PLANNING 1:
 If the task requires interaction with an object part (as opposed to the object as a whole), describe which part of the object would be most suitable for the gripper to interact with.
 Then, detect the necessary objects in the environment. Stop generation after this step to wait until you obtain the printed outputs from the detect_object function calls.
